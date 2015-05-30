@@ -17,15 +17,35 @@ let char_array_of_string s =
   done;
   array
 ;;
+
 let uint8_ptr_of_char_array a = coerce (ptr char) (ptr uint8_t) (CArray.start a);;
+
 let string_of_uint8_array a length =
   string_from_ptr
     (coerce (ptr uint8_t) (ptr char) (CArray.start a))
     ~length:length
 ;;
 
+
+let compute_public_key_c = foreign "uECC_compute_public_key" (ptr uint8_t @-> ptr uint8_t @-> returning int);;
+let compute_public_key private_key =
+  (* this follows other input arg convention -
+    - however if privkey input string is less than 32 bytes, it looks like the array passed to C will be too small?
+    eg.
+    int uECC_compute_public_key(const uint8_t p_privateKey[uECC_BYTES], uint8_t p_publicKey[uECC_BYTES * 2]);
+  *)
+  let private_key_array = char_array_of_string private_key in
+  let public_key_array = CArray.make uint8_t public_key_length in
+  let result = compute_public_key_c(uint8_ptr_of_char_array private_key_array ) (CArray.start public_key_array) in
+  let public_key = string_of_uint8_array public_key_array public_key_length in
+  match result with
+  | 1 -> Some public_key
+  | _ -> None
+;;
+
+
 let make_key_c = foreign "uECC_make_key" (ptr uint8_t @-> ptr uint8_t @-> returning int);;
-let make_key () = 
+let make_key () =
   let public_key_array = CArray.make uint8_t public_key_length in
   let private_key_array = CArray.make uint8_t private_key_length in
   let result = make_key_c (CArray.start public_key_array) (CArray.start private_key_array) in

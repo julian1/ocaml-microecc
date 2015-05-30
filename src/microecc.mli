@@ -1,6 +1,10 @@
 (** OCaml bindings for the micro-ecc library, implementing ECDH and ECDSA.
     All vlaues in this module are handled as binary strings. *)
 
+(** Generates the public key from private key, if successful.
+    @return If successful, returns Some public_key. None otherwise *)
+val compute_public_key : string -> string option
+
 (** Generates a new ECC keypair, if successful.
     @return If successful, returns Some (public_key, private_key). None otherwise *)
 val make_key : unit -> (string * string) option
